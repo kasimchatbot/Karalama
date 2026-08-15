@@ -4,35 +4,40 @@ export default {
 
     if (url.pathname === "/api/chat" && request.method === "POST") {
       try {
-        const { message } = await request.json();
+        const { mesaj } = await request.json();
 
-        const result = await env.AI.run(
+        if (!mesaj) {
+          return Response.json({ hata: "Mesaj boş." }, { status: 400 });
+        }
+
+        const sonuc = await env.AI.run(
           "@cf/meta/llama-3.1-8b-instruct",
           {
             messages: [
               {
                 role: "system",
-                content: "Sen KasımChat adlı yardımcı bir yapay zekâsın. Türkçe, kısa ve anlaşılır cevap ver."
+                content: "Sen KasımChat adlı Türkçe konuşan bir yapay zeka asistanısın. Kısa, anlaşılır ve yardımcı cevaplar ver."
               },
               {
                 role: "user",
-                content: message
+                content: mesaj
               }
             ]
           }
         );
 
         return Response.json({
-          reply: result.response
+          cevap: sonuc.response
         });
-      } catch (error) {
-        return Response.json(
-          { reply: "Bir hata oluştu." },
-          { status: 500 }
-        );
+
+      } catch (hata) {
+        return Response.json({
+          hata: hata.message
+        }, { status: 500 });
       }
     }
 
-    return env.ASSETS.fetch(request);
+    return new Response("KasımChat çalışıyor.");
   }
 };
+
