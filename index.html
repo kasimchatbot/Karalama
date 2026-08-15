@@ -6,76 +6,80 @@
 <title>KasımChat</title>
 
 <style>
-*{box-sizing:border-box}
-
-body{
-  margin:0;
-  font-family:Arial,sans-serif;
-  background:#212121;
-  color:white;
-  height:100vh;
-  display:flex;
-  flex-direction:column;
+* {
+  box-sizing: border-box;
 }
 
-header{
-  height:60px;
-  padding:0 18px;
-  display:flex;
-  align-items:center;
-  font-size:24px;
-  font-weight:bold;
-  border-bottom:1px solid #444;
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #212121;
+  color: white;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-#chat{
-  flex:1;
-  overflow-y:auto;
-  padding:20px;
+header {
+  height: 60px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  font-size: 24px;
+  font-weight: bold;
+  border-bottom: 1px solid #444;
 }
 
-.msg{
-  max-width:80%;
-  padding:14px 16px;
-  margin:10px 0;
-  border-radius:16px;
-  line-height:1.4;
+#chat {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
 }
 
-.bot{
-  background:#2d2d2d;
+.msg {
+  max-width: 80%;
+  padding: 14px 16px;
+  margin: 10px 0;
+  border-radius: 16px;
+  line-height: 1.4;
+  white-space: pre-wrap;
 }
 
-.user{
-  background:#075e54;
-  margin-left:auto;
+.bot {
+  background: #2d2d2d;
 }
 
-.input-area{
-  display:flex;
-  gap:10px;
-  padding:14px;
-  border-top:1px solid #444;
+.user {
+  background: #075e54;
+  margin-left: auto;
 }
 
-input{
-  flex:1;
-  padding:16px;
-  border-radius:25px;
-  border:1px solid #555;
-  background:#2d2d2d;
-  color:white;
-  font-size:16px;
-  outline:none;
+.input-area {
+  display: flex;
+  gap: 10px;
+  padding: 14px;
+  border-top: 1px solid #444;
 }
 
-button{
-  width:60px;
-  border:0;
-  border-radius:50%;
-  background:#10a37f;
-  color:white;
-  font-size:24px;
+input {
+  flex: 1;
+  padding: 16px;
+  border-radius: 25px;
+  border: 1px solid #555;
+  background: #2d2d2d;
+  color: white;
+  font-size: 16px;
+  outline: none;
+}
+
+button {
+  width: 60px;
+  height: 60px;
+  border: 0;
+  border-radius: 50%;
+  background: #10a37f;
+  color: white;
+  font-size: 24px;
 }
 </style>
 </head>
@@ -92,18 +96,19 @@ button{
 </div>
 
 <div class="input-area">
-  <input id="message" placeholder="Mesajını yaz..." />
+  <input id="message" placeholder="Mesajını yaz..." autocomplete="off">
   <button onclick="sendMessage()">➤</button>
 </div>
 
 <script>
-function sendMessage(){
+async function sendMessage() {
   const input = document.getElementById("message");
   const chat = document.getElementById("chat");
   const text = input.value.trim();
 
-  if(!text) return;
+  if (!text) return;
 
+  // Kullanıcının mesajını göster
   const userMsg = document.createElement("div");
   userMsg.className = "msg user";
   userMsg.textContent = text;
@@ -112,17 +117,43 @@ function sendMessage(){
   input.value = "";
   chat.scrollTop = chat.scrollHeight;
 
-  setTimeout(() => {
-    const botMsg = document.createElement("div");
-    botMsg.className = "msg bot";
-    botMsg.textContent = "Mesajını aldım! 🤖";
-    chat.appendChild(botMsg);
-    chat.scrollTop = chat.scrollHeight;
-  }, 500);
+  // AI cevap alanı
+  const botMsg = document.createElement("div");
+  botMsg.className = "msg bot";
+  botMsg.textContent = "Düşünüyorum... 🤖";
+  chat.appendChild(botMsg);
+
+  try {
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        mesaj: text
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.cevap) {
+      botMsg.textContent = data.cevap;
+    } else if (data.hata) {
+      botMsg.textContent = "Hata: " + data.hata;
+    } else {
+      botMsg.textContent = "Beklenmeyen bir cevap geldi.";
+    }
+
+  } catch (error) {
+    botMsg.textContent = "Sunucuya bağlanılamadı. 😕";
+  }
+
+  chat.scrollTop = chat.scrollHeight;
 }
 
-document.getElementById("message").addEventListener("keydown", function(e){
-  if(e.key === "Enter"){
+// Enter ile gönder
+document.getElementById("message").addEventListener("keydown", function(event) {
+  if (event.key === "Enter") {
     sendMessage();
   }
 });
